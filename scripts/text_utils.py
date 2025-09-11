@@ -5,7 +5,7 @@ import re
 import unicodedata
 from typing import List, Tuple, Optional, Iterable
 
-from constants import MMYYYY_REGEX, MONTH_ABBR_PT
+from constants import MMYYYY_REGEX, MONTH_ABBR_PT, CLASSIFICACAO_REGEXES, TIPO_SERVICO_REGEXES, LIM_MIN_REGEXES, LIM_MAX_REGEXES
 
 
 def to_ascii_lower(value: str) -> str:
@@ -101,3 +101,45 @@ def extract_month_year_prefer_discount_lines(
         return _pick_latest_mm_yyyy(pairs)
     # fallback: todo o documento
     return extract_month_year("\n".join(lines))
+
+
+def extract_classificacao(text: str) -> Optional[str]:
+    """Extrai a classificação da fatura (ex: MTA-MOD.TARIFARIA AZUL)."""
+    for regex in CLASSIFICACAO_REGEXES:
+        match = regex.search(text)
+        if match:
+            return match.group(1).strip()
+    return None
+
+
+def extract_tipo_servico(text: str) -> Optional[str]:
+    """Extrai o tipo de serviço (ex: A4, B3)."""
+    for regex in TIPO_SERVICO_REGEXES:
+        match = regex.search(text)
+        if match:
+            return match.group(1).strip()
+    return None
+
+
+def extract_lim_min(text: str) -> Optional[float]:
+    """Extrai o limite mínimo de tensão."""
+    for regex in LIM_MIN_REGEXES:
+        match = regex.search(text)
+        if match:
+            try:
+                return float(match.group(1))
+            except ValueError:
+                continue
+    return None
+
+
+def extract_lim_max(text: str) -> Optional[float]:
+    """Extrai o limite máximo de tensão."""
+    for regex in LIM_MAX_REGEXES:
+        match = regex.search(text)
+        if match:
+            try:
+                return float(match.group(1))
+            except ValueError:
+                continue
+    return None

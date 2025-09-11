@@ -37,3 +37,29 @@ FORA_PONTA_GROUPS = [*BASE_ENERGY_GROUPS, ("fora",), ("ponta", "fp", "pta")]
 
 # Valores conhecidos para correção específica do arquivo 33857
 KNOWN_TRIBUTOS_VALUES = [40.0, 150.0, 287.0]
+
+# Expressões regulares para novos dados - múltiplas variações
+# Lista de regex para classificação (tenta diferentes formatos)
+CLASSIFICACAO_REGEXES = [
+    re.compile(r"Classificação:\s*([A-Z]+-[A-Z\s\.]+?)\s*/\s*[A-Z0-9]+", re.IGNORECASE),  # Formato padrão
+    re.compile(r"Classificação:\s*([^/]+)", re.IGNORECASE),  # Tudo até a barra /
+]
+
+# Lista de regex para tipo de serviço
+TIPO_SERVICO_REGEXES = [
+    re.compile(r"Classificação:\s*[A-Z]+-[A-Z\s\.]+?\s*/\s*([A-Z0-9]+)\s+SERVIÇO", re.IGNORECASE),  # Com SERVIÇO completo
+    re.compile(r"Classificação:\s*[^/]+/\s*([A-Z0-9]+)\s+SERVIÇO", re.IGNORECASE),  # Mais flexível para classificação
+    re.compile(r"Classificação:\s*[^/]+/\s*([A-Z0-9]+)\s+", re.IGNORECASE),  # Qualquer coisa após tipo
+    re.compile(r"Classificação:\s*[^/]+/\s*([A-Z0-9]+)", re.IGNORECASE),  # Só o tipo
+]
+
+# Lista de regex para limites de tensão
+LIM_MIN_REGEXES = [
+    re.compile(r"Lim\.\s*Min\.\s*:\s*(\d+)(?:\s|$)", re.IGNORECASE),  # Lim. Min.: 12345
+    re.compile(r"Limite\s*Mínimo\s*:\s*(\d+)(?:\s|$)", re.IGNORECASE),  # Limite Mínimo: 12345
+]
+
+LIM_MAX_REGEXES = [
+    re.compile(r"Lim\.\s*Max\.\s*:\s*(\d+)(?:\s|$)", re.IGNORECASE),  # Lim. Max.: 12345
+    re.compile(r"Limite\s*Máximo\s*:\s*(\d+)(?:\s|$)", re.IGNORECASE),  # Limite Máximo: 12345
+]

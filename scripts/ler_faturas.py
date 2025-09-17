@@ -268,7 +268,46 @@ def main(argv: Optional[List[str]] = None) -> int:
             "Lim. Max.",
         ]
     ]
-    df.to_excel(output_path, index=False)
+    # Converte colunas monetárias para número e aplica formatação no Excel
+    monetary_cols = [
+        "Energia Atv Injetada mUC",
+        "Energia Atv Injetada oUC",
+        "Energia Atv Injetada - Fora Ponta",
+    ]
+    for col in monetary_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Usa openpyxl para escrever e aplicar number_format de moeda (R$ e 2 casas)
+    with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Planilha1")
+        ws = writer.sheets["Planilha1"]
+
+        # Mapeia cabeçalhos para índices de coluna (1-based no Excel)
+        header_to_col = {cell.value: cell.column for cell in next(ws.iter_rows(min_row=1, max_row=1))}
+
+        currency_format = '"R$" #,##0.00'
+        for header in monetary_cols:
+            col_idx = header_to_col.get(header)
+            if col_idx is None:
+                continue
+            for cell in ws.iter_cols(min_col=col_idx, max_col=col_idx, min_row=2, max_row=ws.max_row):
+                for c in cell:
+                    c.number_format = currency_format
+
+        # Autoajusta a largura das colunas com base no tamanho do conteúdo
+        for column_cells in ws.columns:
+            max_length = 0
+            col_letter = column_cells[0].column_letter
+            for cell in column_cells:
+                try:
+                    cell_value_str = str(cell.value) if cell.value is not None else ""
+                except Exception:
+                    cell_value_str = ""
+                if len(cell_value_str) > max_length:
+                    max_length = len(cell_value_str)
+            adjusted_width = max_length + 2
+            ws.column_dimensions[col_letter].width = adjusted_width
 
     print(
         f"[OK] Gerado Excel com {len(df)} linha(s) em: {output_path}"

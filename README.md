@@ -15,33 +15,38 @@ Gera um arquivo Excel consolidando somente as faturas que possuem pelo menos um 
 
 ### Instalação rápida (Windows PowerShell)
 ```powershell
-cd "C:\Users\cadastro.tecnico\Documents\economiza COTAA"
-python -m venv .venv
-./.venv/Scripts/python -m pip install -U pip
-./.venv/Scripts/pip install -r requirements.txt
+cd "C:\Users\cadastro.tecnico\Documents\Consumos_Energia_COTAA"
+python -m venv .venv2
+./.venv2/Scripts/python -m pip install -U pip
+./.venv2/Scripts/pip install -r requirements.txt
 ```
 
 ### 📁 Estrutura do Projeto
 
 ```
-economiza COTAA/
-├── 📁 faturas/                    # Pasta com faturas PDF para processar
-│   ├── 📁 faturas_teste/          # Faturas de teste
-│   └── 📁 01-2025/                # Faturas por mês/ano
-├── 📁 saidas_excel/               # Pasta onde são salvos os arquivos Excel gerados
-├── 📁 scripts/                    # Código fonte do processador
-│   ├── 🐍 ler_faturas.py          # Módulo principal (interface completa)
-│   ├── 🚀 processar_simples.py    # Script ultra simples (recomendado)
-│   ├── ⚙️ processar_faturas.py    # Script interativo
-│   ├── 📋 constants.py            # Constantes e expressões regulares
-│   ├── 🔤 text_utils.py           # Utilitários de processamento de texto
-│   ├── 📄 pdf_extractor.py        # Extração de texto de PDFs
-│   ├── 💰 value_extractor.py      # Extração de valores monetários
-│   ├── 📐 layout_processor.py     # Processamento baseado em layout
-│   ├── ⚙️ config.py               # Configurações do sistema
-│   └── 📦 __init__.py             # Pacote Python
-├── 📄 requirements.txt            # Dependências Python
-├── 📄 README.md                   # Este arquivo
+Consumos_Energia_COTAA/
+├── 📁 faturas/
+│   ├── 📁 01-2025/
+│   └── 📁 02-2025/
+├── 📁 saidas_excel/
+├── 📁 scripts/
+│   ├── 📁 executors/
+│   │   ├── ler_faturas.py
+│   │   ├── processar_faturas.py
+│   │   └── processar_simples.py
+│   ├── 📁 extractors/
+│   │   ├── pdf_extractor.py
+│   │   └── value_extractor.py
+│   ├── 📁 untils/
+│   │   ├── constants.py
+│   │   └── text_utils.py
+│   ├── layout_processor.py
+│   ├── config.py
+│   └── __init__.py
+├── ui_manager.py                  # Interface Streamlit
+├── run_ui.bat                     # Atalho para abrir a interface
+├── requirements.txt
+└── README.md
 
 ```
 
@@ -64,10 +69,10 @@ economiza COTAA/
 #### 🚀 **Execução Ultra Simples** (Recomendado)
 ```powershell
 # Usa pasta padrão
-./.venv/Scripts/python scripts/processar_simples.py
+./.venv2/Scripts/python scripts/executors/processar_simples.py
 
 # Especifica pasta de entrada
-./.venv/Scripts/python scripts/processar_simples.py "caminho/para/pasta"
+./.venv2/Scripts/python scripts/executors/processar_simples.py "caminho/para/pasta"
 ```
 - ✅ **Zero configuração** - só executar!
 - ✅ Nome do arquivo gerado automaticamente com data/hora
@@ -75,7 +80,7 @@ economiza COTAA/
 
 #### ⚙️ **Execução Interativa**
 ```powershell
-./.venv/Scripts/python scripts/processar_faturas.py
+./.venv2/Scripts/python scripts/executors/processar_faturas.py
 ```
 - ✅ Pergunta pasta de entrada e saída
 - ✅ Nome do arquivo gerado com data atual
@@ -83,17 +88,33 @@ economiza COTAA/
 
 #### ⚙️ **Execução Personalizada**
 ```powershell
-./.venv/Scripts/python scripts/ler_faturas.py --input "CAMINHO_DOS_PDFS" --output "saida_faturas.xlsx"
+./.venv2/Scripts/python scripts/executors/ler_faturas.py --input "CAMINHO_DOS_PDFS" --output "saida_faturas.xlsx"
 ```
 
 Exemplos:
 ```powershell
 # Pasta inteira (procura recursivamente por .pdf)
-./.venv/Scripts/python scripts/ler_faturas.py --input "." --output "saida_faturas.xlsx"
+./.venv2/Scripts/python scripts/executors/ler_faturas.py --input "." --output "saida_faturas.xlsx"
 
 # Um único arquivo PDF
-./.venv/Scripts/python scripts/ler_faturas.py --input "C:\caminho\arquivo.pdf" --output "saida.xlsx"
+./.venv2/Scripts/python scripts/executors/ler_faturas.py --input "C:\caminho\arquivo.pdf" --output "saida.xlsx"
 ```
+
+### Interface (Streamlit)
+Opção 1 – via .bat (duplo clique recomendado)
+```
+run_ui.bat
+```
+Opção 2 – via PowerShell
+```powershell
+./.venv2/Scripts/Activate.ps1
+streamlit run ui_manager.py
+```
+
+### Solução de problemas
+- Módulo não encontrado (streamlit): ative a venv correta (`.venv2`) e reinstale `pip install -r requirements.txt`.
+- Imports quebrados após mover arquivos: garanta que a estrutura e os imports relativos estão como na seção de estrutura.
+- Streamlit abre o código em vez da interface: use `run_ui.bat` ou `streamlit run ui_manager.py`.
 
 ### Observações
 - O script busca valores monetários próximos às linhas com os rótulos de "Energia Atv Injetada" (com e sem o símbolo `R$`).

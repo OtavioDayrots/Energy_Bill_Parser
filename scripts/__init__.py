@@ -22,8 +22,8 @@ __author__ = "Sistema de Processamento de Faturas"
 __description__ = "Sistema modular para extrair dados de energia injetada de faturas PDF"
 
 # Imports principais para facilitar uso
-from .ler_faturas import main, process_pdf, Row
-from .constants import MUC_GROUPS, OUC_GROUPS, FORA_PONTA_GROUPS
+from .executors.ler_faturas import main, process_pdf, Row
+from .untils.constants import MUC_GROUPS, OUC_GROUPS, FORA_PONTA_GROUPS
 
 __all__ = [
     'main',

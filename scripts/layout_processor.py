@@ -6,9 +6,9 @@ from typing import List, Dict, Any, Optional, Tuple, Iterable
 
 import fitz  # PyMuPDF
 
-from constants import CURRENCY_REGEX, NUMBER_PT_REGEX, NUMBER_GENERIC_REGEX
-from text_utils import to_ascii_lower, parse_pt_br_number, contains_token_groups
-from pdf_extractor import _collect_page_lines
+from .untils.constants import CURRENCY_REGEX, NUMBER_PT_REGEX, NUMBER_GENERIC_REGEX
+from .untils.text_utils import to_ascii_lower, parse_pt_br_number, contains_token_groups
+from .extractors.pdf_extractor import _collect_page_lines
 
 
 def _find_header_columns_x(lines: List[Dict[str, Any]]) -> Dict[str, Optional[float]]:

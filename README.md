@@ -21,20 +21,6 @@ python -m venv .venv2
 ./.venv2/Scripts/pip install -r requirements.txt
 ```
 
-CMD (Prompt de Comando)
-
-cd C:\Users\cadastro.tecnico\Documents\Consumos_Energia_COTAA
-
-REM criar venv
-python -m venv .venv2
-
-REM ativar venv
-.\.venv2\Scripts\activate.bat
-
-REM instalar dependências
-python -m pip install -U pip
-pip install -r requirements.txt
-
 ### 📁 Estrutura do Projeto
 
 ```

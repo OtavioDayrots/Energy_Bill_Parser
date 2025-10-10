@@ -12,7 +12,7 @@ from typing import List, Optional
 
 import pandas as pd
 
-from ..untils.constants import MUC_GROUPS, OUC_GROUPS, FORA_PONTA_GROUPS
+from ..untils.constants import MTC_GROUPS, MUC_GROUPS, OUC_GROUPS, FORA_PONTA_GROUPS
 from ..extractors.pdf_extractor import extract_text_from_pdf, extract_uc, extract_uc_robust, list_pdfs
 from ..untils.text_utils import extract_month_year_prefer_discount_lines, extract_classificacao, extract_tipo_servico, extract_lim_min, extract_lim_max
 from ..extractors.value_extractor import (
@@ -34,6 +34,7 @@ class Row:
     classificacao: Optional[str]
     tipo_servico: Optional[str]
     injetada: str  # SIM ou NÃO
+    mtc_convencional_b3: Optional[float]
     energia_injetada_muc: Optional[float]
     energia_injetada_ouc: Optional[float]
     energia_injetada_fora_ponta: Optional[float]
@@ -75,8 +76,11 @@ def process_pdf(
     lim_min = extract_lim_min(text)
     lim_max = extract_lim_max(text)
 
+
     # Grupos de tokens (considera variações: Ativa/Atv, Injetada/Injet)
     base_groups = [("energia",), ("ativa", "atv", "ativ"), ("injetada", "injet")]
+    # considerar Consumo em kWh
+    mtc_groups = [("Consumo"), ("em"), ("kWh")]
     # considerar uc/o-uc e mpt (mês) no mesmo label
     muc_groups = [*base_groups, ("muc", "m uc", "m-uc")]
     ouc_groups = [*base_groups, ("ouc", "o uc", "o-uc")]
@@ -85,8 +89,17 @@ def process_pdf(
 
     data_ref = extract_month_year_prefer_discount_lines(lines, muc_groups, ouc_groups)
 
+    # Verifica se deve extrair MTC baseado na classificação e tipo de serviço
+    should_extract_mtc = (classificacao and "MTC-CONVENCIONAL BAIXA TENSÃO" in classificacao.upper() and 
+                         tipo_servico and tipo_servico.upper() == "B3")
+    
+    if debug:
+        print(f"[DEBUG] Classificação: {classificacao}, Tipo Serviço: {tipo_servico}")
+        print(f"[DEBUG] Deve extrair MTC: {should_extract_mtc}")
+
     # 1) Tenta extrair por coluna "Valor (R$)" alinhada ao cabeçalho
     valor_col_idx = find_column_index(lines, "valor (r$)")
+    val_mtc = None
     val_muc = None
     val_ouc = None
     val_fp = None
@@ -94,9 +107,14 @@ def process_pdf(
     if valor_col_idx is not None:
         if debug:
             print(f"[DEBUG] índice coluna 'Valor (R$)' detectado em pos {valor_col_idx}")
+        mtc_lines = find_label_lines(lines, mtc_groups)
         muc_lines = find_label_lines(lines, muc_groups)
         ouc_lines = find_label_lines(lines, ouc_groups)
         fp_lines = find_label_lines(lines, fora_ponta_groups)
+        
+        # Extrai MTC apenas se as condições forem atendidas
+        if mtc_lines and should_extract_mtc:
+            val_mtc = extract_value_at_column(lines, mtc_lines[0][0], valor_col_idx, search_down=2, debug=debug, label="mTC", money_only=False)  # kWh, não dinheiro
         if muc_lines:
             val_muc = extract_value_at_column(lines, muc_lines[0][0], valor_col_idx, search_down=2, debug=debug, label="mUC", money_only=True)
         if ouc_lines:
@@ -104,7 +122,9 @@ def process_pdf(
         if fp_lines:
             val_fp = extract_value_at_column(lines, fp_lines[0][0], valor_col_idx, search_down=2, debug=debug, label="FP", money_only=True)
 
-        # 2) Fallback: proximidade e busca estendida em R$ - SOMA MÚLTIPLAS OCORRÊNCIAS
+        # 2) Fallback: proximidade e busca estendida - SOMA MÚLTIPLAS OCORRÊNCIAS
+        if val_mtc is None and should_extract_mtc:
+            val_mtc = extract_label_value_sum(lines, mtc_groups, window=window, debug=debug, label="mTC", money_only=False)  # kWh, não dinheiro
         if val_muc is None:
             val_muc = extract_label_value_sum(lines, muc_groups, window=window, debug=debug, label="mUC", money_only=True)
         if val_ouc is None:
@@ -124,10 +144,12 @@ def process_pdf(
                     print(f"[DEBUG] Valor encontrado na seção de tributos: {val_muc}")
 
     # 3) Fallback final: leitura por layout (coordenadas x) via PyMuPDF dict
-    if any(v is None for v in (val_muc, val_ouc, val_fp)) or (uc is None):
+    if any(v is None for v in (val_mtc, val_muc, val_ouc, val_fp)) or (uc is None):
         if debug:
             print(f"[DEBUG] Executando layout-based search...")
-        lmuc, louc, lfp, luc = extract_values_by_layout(pdf_path, debug=debug)
+        lmtc, lmuc, louc, lfp, luc = extract_values_by_layout(pdf_path, debug=debug)
+        if should_extract_mtc and lmtc is not None:
+            val_mtc = lmtc
         if val_muc is None:
             val_muc = lmuc
         if val_ouc is None:
@@ -138,19 +160,20 @@ def process_pdf(
             uc = luc
 
     if debug:
+        mtc_lines = find_label_lines(lines, mtc_groups)
         muc_lines = find_label_lines(lines, muc_groups)
         ouc_lines = find_label_lines(lines, ouc_groups)
         fp_lines = find_label_lines(lines, fora_ponta_groups)
         print(f"[DEBUG] PDF: {pdf_path}")
         print(f"[DEBUG] UC: {uc} | Data: {data_ref}")
-        print(f"[DEBUG] mUC linhas: {len(muc_lines)} | oUC linhas: {len(ouc_lines)} | Fora Ponta linhas: {len(fp_lines)}")
-        for tag, lst in (("mUC", muc_lines), ("oUC", ouc_lines), ("FP", fp_lines)):
+        print(f"[DEBUG] mTC linhas: {len(mtc_lines)} | mUC linhas: {len(muc_lines)} | oUC linhas: {len(ouc_lines)} | Fora Ponta linhas: {len(fp_lines)}")
+        for tag, lst in [("mTC", mtc_lines), ("mUC", muc_lines), ("oUC", ouc_lines), ("FP", fp_lines)]:
             for idx, ln in lst[:5]:
                 print(f"[DEBUG] [{tag}] linha {idx}: {ln}")
-        print(f"[DEBUG] Valores → mUC={val_muc} | oUC={val_ouc} | FP={val_fp}")
+        print(f"[DEBUG] Valores - mTC={val_mtc} mUC={val_muc} | oUC={val_ouc} | FP={val_fp}")
 
     # Determina se tem energia injetada
-    tem_energia_injetada = any(v is not None for v in (val_muc, val_ouc, val_fp))
+    tem_energia_injetada = any(v is not None for v in (val_mtc, val_muc, val_ouc, val_fp))
     injetada_status = "SIM" if tem_energia_injetada else "NÃO"
     
     # Sempre retorna uma Row, independente de ter energia injetada
@@ -160,10 +183,11 @@ def process_pdf(
         unidade_consumidora=uc,
         classificacao=classificacao,
         tipo_servico=tipo_servico,
-        injetada=injetada_status,
+        mtc_convencional_b3=val_mtc,
         energia_injetada_muc=val_muc,
         energia_injetada_ouc=val_ouc,
         energia_injetada_fora_ponta=val_fp,
+        injetada=injetada_status,
         lim_min=lim_min,
         lim_max=lim_max,
         )
@@ -178,6 +202,7 @@ def to_dataframe(rows: List[Row]) -> pd.DataFrame:
             "Unidade Consumidora": r.unidade_consumidora,
             "Classificação": r.classificacao,
             "Tipo de Serviço": r.tipo_servico,
+            "MTC-CONVENCIONAL B3": r.mtc_convencional_b3,
             "Energia Atv Injetada mUC": r.energia_injetada_muc,
             "Energia Atv Injetada oUC": r.energia_injetada_ouc,
             "Energia Atv Injetada - Fora Ponta": r.energia_injetada_fora_ponta,
@@ -260,6 +285,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "Unidade Consumidora",
             "Classificação",
             "Tipo de Serviço",
+            "MTC-CONVENCIONAL B3",
             "Energia Atv Injetada mUC",
             "Energia Atv Injetada oUC",
             "Energia Atv Injetada - Fora Ponta",
@@ -270,6 +296,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ]
     # Converte colunas monetárias para número e aplica formatação no Excel
     monetary_cols = [
+        "MTC-CONVENCIONAL B3",
         "Energia Atv Injetada mUC",
         "Energia Atv Injetada oUC",
         "Energia Atv Injetada - Fora Ponta",

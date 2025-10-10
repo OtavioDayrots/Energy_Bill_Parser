@@ -15,7 +15,7 @@ from .ler_faturas import main
 
 def processar():
     """Processa faturas com configurações personalizáveis."""
-    print("🔋 Processador de Faturas de Energia")
+    print("Processador de Faturas de Energia")
     print("=" * 40)
     
     # Obtém o diretório do projeto (pai do diretório scripts)
@@ -25,7 +25,7 @@ def processar():
     if len(sys.argv) >= 2:
         input_path = sys.argv[1]
     else:
-        input_path = input("📁 Digite o caminho da pasta com os PDFs (ou Enter para usar padrão): ").strip()
+        input_path = input("Digite o caminho da pasta com os PDFs (ou Enter para usar padrão): ").strip()
         if not input_path:
             default_paths = get_default_paths()
             input_path = default_paths['input']  # Padrão
@@ -33,7 +33,7 @@ def processar():
     if len(sys.argv) >= 3:
         output_dir = sys.argv[2]
     else:
-        output_dir = input("📄 Digite o diretório de saída (ou Enter para usar padrão): ").strip()
+        output_dir = input("Digite o diretório de saída (ou Enter para usar padrão): ").strip()
         if not output_dir:
             # usa diretório padrão centralizado
             output_dir = get_default_paths()['output']
@@ -46,8 +46,8 @@ def processar():
     output_filename = f"faturas_processadas_{data_atual}.xlsx"
     output_path = os.path.join(output_dir, output_filename)
     
-    print(f"📁 Processando: {input_path}")
-    print(f"📄 Saída: {output_path}")
+    print(f"Processando: {input_path}")
+    print(f"Saída: {output_path}")
     print("-" * 40)
     
     # Simula argumentos da linha de comando
@@ -64,13 +64,13 @@ if __name__ == "__main__":
     try:
         exit_code = processar()
         if exit_code == 0:
-            print("\n✅ Processamento concluído com sucesso!")
+            print("\nProcessamento concluído com sucesso!")
         else:
-            print(f"\n❌ Processamento falhou com código: {exit_code}")
+            print(f"\nProcessamento falhou com código: {exit_code}")
         sys.exit(exit_code)
     except KeyboardInterrupt:
-        print("\n⏹️ Processamento interrompido pelo usuário.")
+        print("\nProcessamento interrompido pelo usuário.")
         sys.exit(1)
     except Exception as e:
-        print(f"\n💥 Erro inesperado: {e}")
+        print(f"\nErro inesperado: {e}")
         sys.exit(1)

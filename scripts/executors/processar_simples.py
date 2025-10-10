@@ -16,7 +16,7 @@ from .ler_faturas import main
 
 def main_simples():
     """Processa faturas de forma ultra simples."""
-    print("🔋 Processador de Faturas de Energia")
+    print("Processador de Faturas de Energia")
     print("=" * 40)
     
     # Obtém o diretório do projeto (pai do diretório scripts)
@@ -40,8 +40,8 @@ def main_simples():
     output_filename = f"faturas_processadas_{data_atual}.xlsx"
     output_path = os.path.join(output_dir, output_filename)
     
-    print(f"📁 Processando: {input_path}")
-    print(f"📄 Saída: {output_path}")
+    print(f"Processando: {input_path}")
+    print(f"Saída: {output_path}")
     print("-" * 40)
     
     # Simula argumentos da linha de comando
@@ -58,13 +58,13 @@ if __name__ == "__main__":
     try:
         exit_code = main_simples()
         if exit_code == 0:
-            print("\n✅ Processamento concluído com sucesso!")
+            print("\nProcessamento concluído com sucesso!")
         else:
-            print(f"\n❌ Processamento falhou com código: {exit_code}")
+            print(f"\nProcessamento falhou com código: {exit_code}")
         sys.exit(exit_code)
     except KeyboardInterrupt:
-        print("\n⏹️ Processamento interrompido pelo usuário.")
+        print("\nProcessamento interrompido pelo usuário.")
         sys.exit(1)
     except Exception as e:
-        print(f"\n💥 Erro inesperado: {e}")
+        print(f"\nErro inesperado: {e}")
         sys.exit(1)

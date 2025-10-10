@@ -95,8 +95,9 @@ def _extract_number_near_x_from_line(
     return best_val
 
 
-def extract_values_by_layout(pdf_path: str, *, debug: bool = False) -> Tuple[Optional[float], Optional[float], Optional[float], Optional[str]]:
+def extract_values_by_layout(pdf_path: str, *, debug: bool = False) -> Tuple[Optional[float], Optional[float], Optional[float], Optional[float], Optional[str]]:
     """Extrai valores usando análise de layout baseada em coordenadas."""
+    mtc_val: Optional[float] = None
     muc_val: Optional[float] = None
     ouc_val: Optional[float] = None
     fp_val: Optional[float] = None
@@ -110,7 +111,7 @@ def extract_values_by_layout(pdf_path: str, *, debug: bool = False) -> Tuple[Opt
             header_x = _find_header_columns_x(lines)
             quant_x = header_x.get("quant")
             if debug and (quant_x is not None or header_x.get("preco") is not None or header_x.get("valor") is not None):
-                print(f"[DEBUG] [layout] colunas x → Quant~{header_x.get('quant')}, Preco~{header_x.get('preco')}, Valor~{header_x.get('valor')}")
+                print(f"[DEBUG] [layout] colunas x - Quant~{header_x.get('quant')}, Preco~{header_x.get('preco')}, Valor~{header_x.get('valor')}")
 
             # tenta encontrar UC no layout se ainda não achou (sem confundir com mUC/oUC)
             if uc_found is None:
@@ -149,18 +150,23 @@ def extract_values_by_layout(pdf_path: str, *, debug: bool = False) -> Tuple[Opt
 
             # indices dos itens - busca mais específica
             base_groups = [("energia",), ("ativa", "atv", "ativ"), ("injetada", "injet")]
+            mtc_groups = [("consumo",), ("em",), ("kwh",)]
             muc_groups = [*base_groups, ("muc",)]
             ouc_groups = [*base_groups, ("ouc",)]
             fp_groups = [*base_groups, ("fora",), ("ponta",)]
 
+            mtc_idx_list = _find_line_indices_by_tokens(lines, mtc_groups)
             muc_idx_list = _find_line_indices_by_tokens(lines, muc_groups)
             ouc_idx_list = _find_line_indices_by_tokens(lines, ouc_groups)
             fp_idx_list = _find_line_indices_by_tokens(lines, fp_groups)
             
             if debug:
+                print(f"[DEBUG] [layout] mTC indices: {mtc_idx_list}")
                 print(f"[DEBUG] [layout] mUC indices: {muc_idx_list}")
                 print(f"[DEBUG] [layout] oUC indices: {ouc_idx_list}")
                 print(f"[DEBUG] [layout] FP indices: {fp_idx_list}")
+                for idx in mtc_idx_list:
+                    print(f"[DEBUG] [layout] mTC linha {idx}: '{lines[idx]['text']}'")
                 for idx in muc_idx_list:
                     print(f"[DEBUG] [layout] mUC linha {idx}: '{lines[idx]['text']}'")
 
@@ -221,6 +227,10 @@ def extract_values_by_layout(pdf_path: str, *, debug: bool = False) -> Tuple[Opt
                 
                 return total_value if found_any else None
 
+            if mtc_val is None:
+                mtc_val = _probe_value(mtc_idx_list)
+                if debug and mtc_val is not None:
+                    print(f"[DEBUG] [layout] mTC valor encontrado: {mtc_val}")
             if muc_val is None:
                 muc_val = _probe_value(muc_idx_list)
                 if debug and muc_val is not None:
@@ -237,5 +247,5 @@ def extract_values_by_layout(pdf_path: str, *, debug: bool = False) -> Tuple[Opt
         doc.close()
 
     if debug:
-        print(f"[DEBUG] [layout] Resultado final: mUC={muc_val}, oUC={ouc_val}, FP={fp_val}, UC={uc_found}")
-    return muc_val, ouc_val, fp_val, uc_found
+        print(f"[DEBUG] [layout] Resultado final: mTC={mtc_val}, mUC={muc_val}, oUC={ouc_val}, FP={fp_val}, UC={uc_found}")
+    return mtc_val, muc_val, ouc_val, fp_val, uc_found

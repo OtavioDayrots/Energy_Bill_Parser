@@ -55,6 +55,7 @@ MONTH_NAME_TO_NUM = {
 
 # Grupos de tokens para identificação de tipos de energia
 BASE_ENERGY_GROUPS = [("energia",), ("ativa", "atv", "ativ"), ("injetada", "injet")]
+MTC_GROUPS = [("Consumo"), ("em"), ("kWh")]
 MUC_GROUPS = [*BASE_ENERGY_GROUPS, ("muc", "m uc", "m-uc")]
 OUC_GROUPS = [*BASE_ENERGY_GROUPS, ("ouc", "o uc", "o-uc")]
 FORA_PONTA_GROUPS = [*BASE_ENERGY_GROUPS, ("fora",), ("ponta", "fp", "pta")]

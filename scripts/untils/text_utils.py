@@ -94,7 +94,7 @@ def contains_token_groups(text_norm: str, token_groups: Iterable[Iterable[str]])
                 return False
         else:
             # grupo unitário (string)
-            if str(group) not in text_norm:
+            if str(group).lower() not in text_norm:
                 return False
     return True
 
